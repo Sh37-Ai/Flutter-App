@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> saveBoissons(List<Boisson> boissons) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Convertir chaque boisson en Map
+
     final jsonList = boissons.map((b) => {
       'name': b.name,
       'country': b.country,
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       'imagePath': b.imagePath,
     }).toList();
 
-    // Sauvegarder en JSON
+
     await prefs.setString('boissons', jsonEncode(jsonList));
     print('Boissons sauvegardées : $jsonList');
   }
@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return matchCountry && matchCategory && matchSearch;
     }).toList();
 
-    // Tri
+
     switch (selectedSort) {
       case 'Note':
         result.sort((a, b) => b.rating.compareTo(a.rating));
@@ -256,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
 
 
-            // 2️⃣ Logo + titre
+            // Logo + titre
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -267,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                   const SizedBox(width: 10),
                   const Text(
-                    "My own Flutter App",
+                    "Mes boissons",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -278,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
 
-            // 3️⃣ Barre de recherche
+            //  Barre de recherche
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
@@ -290,12 +290,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 onChanged: (v) {
                   searchQuery = v;
                   applyFilters();
-                  
+
                 },
               ),
             ),
 
-            // 4️⃣ Zone filtres + grille
+            // 4⃣ Zone filtres + grille
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -325,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
 
-            // 5️⃣ Bouton Ajouter en bas
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -456,6 +456,29 @@ class _ajoutBoisson extends State<ajoutBoisson> {
   final TextEditingController _commentsController = TextEditingController();
   final TextEditingController _imagePathController = TextEditingController();
 
+  final List<String> imageOptions = [
+    'assets/images/AïnSaïss.png',
+    'assets/images/Bahia.png',
+    'assets/images/CityDrink.png',
+    'assets/images/Coca.png',
+    'assets/images/evian.png',
+    'assets/images/Fanta.png',
+    'assets/images/Hawai.png',
+    'assets/images/Jibal.png',
+    'assets/images/Lipton.png',
+    'assets/images/Mirinda.png',
+    'assets/images/Monster.png',
+    'assets/images/Nestea.png',
+    'assets/images/Orangina.png',
+    'assets/images/Pepsi.png',
+    'assets/images/Poms.png',
+    'assets/images/Redbul.png',
+    'assets/images/Selecto.png',
+    'assets/images/sidiAli.png',
+    'assets/images/Volvic.png',
+    'assets/images/Zagora.png',
+  ];
+
 
   @override
   /*
@@ -544,33 +567,81 @@ class _ajoutBoisson extends State<ajoutBoisson> {
               const SizedBox(height: 10),
 
               // Champ Catégorie
-              TextField(
-                controller: _categoryController,
+
+              DropdownButtonFormField<String>(
+                value: _categoryController.text.isNotEmpty ? _categoryController.text : null,
                 decoration: const InputDecoration(
                   labelText: 'Catégorie',
                   border: OutlineInputBorder(),
                 ),
+                items: const [
+                  DropdownMenuItem(value: 'Soda', child: Text('Soda')),
+                  DropdownMenuItem(value: 'Jus', child: Text('Jus')),
+                  DropdownMenuItem(value: 'Eau', child: Text('Eau')),
+                  DropdownMenuItem(value: 'Thé glacé', child: Text('Thé glacé')),
+                  DropdownMenuItem(value: 'Boisson énergétique', child: Text('Boisson énergétique')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _categoryController.text = value!;
+                  });
+                },
               ),
               const SizedBox(height: 10),
+
+
 
               // Champ Date
               TextField(
                 controller: _dateController,
+                readOnly: true, // Empêche la saisie manuelle
                 decoration: const InputDecoration(
                   labelText: 'Date de sortie',
                   border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
                 ),
+                onTap: () async {
+                  // Ouvre le sélecteur de date
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000), // date min
+                    lastDate: DateTime(2100),  // date max
+                  );
+
+                  if (pickedDate != null) {
+                    // Formate la date en "yyyy-MM-dd"
+                    String formattedDate =
+                        "${pickedDate.year}-${pickedDate.month.toString().padLeft(2,'0')}-${pickedDate.day.toString().padLeft(2,'0')}";
+                    setState(() {
+                      _dateController.text = formattedDate;
+                    });
+                  }
+                },
               ),
               const SizedBox(height: 10),
 
+
               // Champ Note
               TextField(
-                controller: _ratingController,
-                decoration: const InputDecoration(
-                  labelText: 'Note',
-                  border: OutlineInputBorder(),
-                ),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Note (0 à 5)"),
+                onChanged: (v) {
+                  double? value = double.tryParse(v);
+                  if (value != null) {
+                    if (value < 0) value = 0;
+                    if (value > 5) value = 5;
+                    setState(() {
+                      var rating = value!;
+                      _ratingController.text = rating.toString(); // met à jour le TextField
+                      _ratingController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _ratingController.text.length),
+                      );
+                    });
+                  }
+                },
               ),
+
               const SizedBox(height: 10),
 
               // Champ Commentaire
@@ -584,12 +655,29 @@ class _ajoutBoisson extends State<ajoutBoisson> {
               const SizedBox(height: 10),
 
               // Champ ImagePath
-              TextField(
-                controller: _imagePathController,
+              DropdownButtonFormField<String>(
+                value: _imagePathController.text.isNotEmpty ? _imagePathController.text : null,
                 decoration: const InputDecoration(
-                  labelText: 'Image Path ',
+                  labelText: 'Image',
                   border: OutlineInputBorder(),
                 ),
+                items: imageOptions
+                    .map((img) => DropdownMenuItem(
+                  value: img,
+                  child: Row(
+                    children: [
+                      Image.asset(img, width: 40, height: 40, fit: BoxFit.cover),
+                      const SizedBox(width: 8),
+                      Text(img.split('/').last),
+                    ],
+                  ),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _imagePathController.text = value!;
+                  });
+                },
               ),
               const SizedBox(height: 20),
               /*
@@ -816,6 +904,29 @@ class _ModificationBoissonState extends State<ModificationBoisson> {
   late final TextEditingController _commentsController;
   late final TextEditingController _imagePathController;
 
+  final List<String> imageOptions = [
+    'assets/images/AïnSaïss.png',
+    'assets/images/Bahia.png',
+    'assets/images/CityDrink.png',
+    'assets/images/Coca.png',
+    'assets/images/evian.png',
+    'assets/images/Fanta.png',
+    'assets/images/Hawai.png',
+    'assets/images/Jibal.png',
+    'assets/images/Lipton.png',
+    'assets/images/Mirinda.png',
+    'assets/images/Monster.png',
+    'assets/images/Nestea.png',
+    'assets/images/Orangina.png',
+    'assets/images/Pepsi.png',
+    'assets/images/Poms.png',
+    'assets/images/Redbul.png',
+    'assets/images/Selecto.png',
+    'assets/images/sidiAli.png',
+    'assets/images/Volvic.png',
+    'assets/images/Zagora.png',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -909,33 +1020,81 @@ class _ModificationBoissonState extends State<ModificationBoisson> {
               const SizedBox(height: 10),
 
               // Champ Catégorie
-              TextField(
-                controller: _categoryController,
+              // Champ Catégorie
+              DropdownButtonFormField<String>(
+                value: _categoryController.text.isNotEmpty ? _categoryController.text : null,
                 decoration: const InputDecoration(
                   labelText: 'Catégorie',
                   border: OutlineInputBorder(),
                 ),
+                items: const [
+                  DropdownMenuItem(value: 'Soda', child: Text('Soda')),
+                  DropdownMenuItem(value: 'Jus', child: Text('Jus')),
+                  DropdownMenuItem(value: 'Eau', child: Text('Eau')),
+                  DropdownMenuItem(value: 'Thé glacé', child: Text('Thé glacé')),
+                  DropdownMenuItem(value: 'Boisson énergétique', child: Text('Boisson énergétique')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _categoryController.text = value!;
+                  });
+                },
               ),
               const SizedBox(height: 10),
 
+
+              // Champ Date
               // Champ Date
               TextField(
                 controller: _dateController,
+                readOnly: true, // Empêche la saisie manuelle
                 decoration: const InputDecoration(
                   labelText: 'Date de sortie',
                   border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
                 ),
+                onTap: () async {
+                  // Ouvre le sélecteur de date
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000), // date min
+                    lastDate: DateTime(2100),  // date max
+                  );
+
+                  if (pickedDate != null) {
+                    // Formate la date en "yyyy-MM-dd"
+                    String formattedDate =
+                        "${pickedDate.year}-${pickedDate.month.toString().padLeft(2,'0')}-${pickedDate.day.toString().padLeft(2,'0')}";
+                    setState(() {
+                      _dateController.text = formattedDate;
+                    });
+                  }
+                },
               ),
               const SizedBox(height: 10),
 
+
               // Champ Note
               TextField(
-                controller: _ratingController,
-                decoration: const InputDecoration(
-                  labelText: 'Note',
-                  border: OutlineInputBorder(),
-                ),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Note (0 à 5)"),
+                onChanged: (v) {
+                  double? value = double.tryParse(v);
+                  if (value != null) {
+                    if (value < 0) value = 0;
+                    if (value > 5) value = 5;
+                    setState(() {
+                      var rating = value!;
+                      _ratingController.text = rating.toString(); // met à jour le TextField
+                      _ratingController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _ratingController.text.length),
+                      );
+                    });
+                  }
+                },
               ),
+
               const SizedBox(height: 10),
 
               // Champ Commentaire
@@ -949,12 +1108,29 @@ class _ModificationBoissonState extends State<ModificationBoisson> {
               const SizedBox(height: 10),
 
               // Champ ImagePath
-              TextField(
-                controller: _imagePathController,
+              DropdownButtonFormField<String>(
+                value: _imagePathController.text.isNotEmpty ? _imagePathController.text : null,
                 decoration: const InputDecoration(
-                  labelText: 'Image Path',
+                  labelText: 'Image',
                   border: OutlineInputBorder(),
                 ),
+                items: imageOptions
+                    .map((img) => DropdownMenuItem(
+                  value: img,
+                  child: Row(
+                    children: [
+                      Image.asset(img, width: 40, height: 40, fit: BoxFit.cover),
+                      const SizedBox(width: 8),
+                      Text(img.split('/').last),
+                    ],
+                  ),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _imagePathController.text = value!;
+                  });
+                },
               ),
               const SizedBox(height: 20),
 
