@@ -7,13 +7,17 @@ import 'dart:html' as html;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-
+import 'package:image_picker/image_picker.dart';
+// Application initial
 void main() {
   runApp(const MaterialApp(home: HomeScreen()));
 }
 
+
+// Classe Boisson et liste de boissons
 class Boisson {
+
+  // Constructeur
   final String name;
   final String country;
   final String category;
@@ -22,10 +26,17 @@ class Boisson {
   final String comments;
   final String imagePath;
 
+  // Getters
   String get fullName => '$name';
+  String get fullCountry => '$country';
+  String get fullCategory => '$category';
+  String get fullDate => '$date';
+  String get fullRating => '$rating';
+  String get fullComments => '$comments';
+  String get fullImagePath => '$imagePath';
 
 
-
+  // Constructeur
   Boisson({
     required this.name,
     required this.country,
@@ -36,6 +47,7 @@ class Boisson {
     required this.imagePath ,
   });
 
+  // Cette méthode permet de créer une instance de Boisson à partir d'une ligne du fichier txt
   factory Boisson.fromLine(String line) {
     final parts = line.split(',').map((e) => e.replaceAll('"', '').trim()).toList();
     return Boisson(
@@ -45,33 +57,47 @@ class Boisson {
       date: parts.length > 3 ? parts[3] : '',
       rating: parts.length > 4 ? parts[4] : '',
       comments: parts.length > 5 ? parts[5] : '',
-      imagePath: parts.length > 6 ? parts[6] : 'assets/images/placeholder.png',
+      imagePath: parts.length > 6 ? parts[6] : 'assets/images/Coca.png',
     );
   }
 }
 
+// Classe HomeScreen et liste de boissons
 class HomeScreen extends StatefulWidget {
+
+  // Constructeur
   const HomeScreen({super.key});
+
 
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+// Classe _HomeScreenState et liste de boissons
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+
+  // Liste de boissons
   List<Boisson> boissons = [];
+
+  // Liste de boissons filtrées
   List<Boisson> filteredBoissons = [];
 
+  // Variables de filtrage
   String? selectedCountry;
   String? selectedCategory;
   String searchQuery = '';
   String selectedSort = 'Nom';
 
 
+  // Fonction pour sauvegarder les données dans SharedPreferences
   Future<void> saveBoissons(List<Boisson> boissons) async {
+
+    // Récupère les préférences
     final prefs = await SharedPreferences.getInstance();
 
 
+    // Converti la liste de boissons en JSON
     final jsonList = boissons.map((b) => {
       'name': b.name,
       'country': b.country,
@@ -82,18 +108,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       'imagePath': b.imagePath,
     }).toList();
 
-
+    // Sauvegarde les données dans SharedPreferences
     await prefs.setString('boissons', jsonEncode(jsonList));
     print('Boissons sauvegardées : $jsonList');
   }
 
 
+  // Fonction pour charger les données depuis SharedPreferences
   Future<bool> loadFromStorage() async {
+
+    // Récupère les préférences
     final prefs = await SharedPreferences.getInstance();
+    // Récupère les données
     final data = prefs.getString('boissons');
     print('Données chargées depuis SharedPreferences : $data');
     if (data == null) return false;
 
+    // Converti les données JSON en liste de boissons
     final decoded = jsonDecode(data) as List;
     boissons = decoded.map((e) => Boisson(
       name: e['name'],
@@ -105,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       imagePath: e['imagePath'],
     )).toList();
 
+    // Met à jour la liste de boissons filtrées
     filteredBoissons = List.from(boissons);
     setState(() {
       applyFilters();
@@ -114,7 +146,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
 
 
+
   @override
+  // Fonction d'initialisation
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -122,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   @override
+  // Fonction de destruction
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -135,13 +170,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   } */
 
+  // Fonction d'initialisation
   Future<void> initData() async {
+    // Charge les données depuis SharedPreferences
     final hasData = await loadFromStorage();
     if (!hasData) {
       await loadBoissons();
     }
   }
 
+  // Fonction pour charger les données depuis le fichier txt
   Future<void> loadBoissons() async {
     final data = await rootBundle.loadString('assets/files/Boissons.txt');
     final list = data
@@ -156,6 +194,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
   }
 
+  // Fonction pour appliquer les filtres
   void applyFilters() {
     List<Boisson> result = boissons.where((b) {
       final matchCountry =
@@ -188,19 +227,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   @override
+  // Fonction de construction de l'interface
   Widget build(BuildContext context) {
+
+    // Liste des pays et catégories
     final countries = ["Tous", ...boissons.map((b) => b.country).toSet()];
     final categories = ["Toutes", ...boissons.map((b) => b.category).toSet()];
 
+    // Calcul de la largeur de l'écran
     final w = MediaQuery.of(context).size.width;
     final isWide = w > 800;
 
+    // Fonction pour afficher les filtres
     Widget filtersPanel() {
+
+      // Liste des pays et catégories
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Filtres",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
+          const Text("Filtres", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
 
           const Text("Pays"),
@@ -249,13 +295,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
     }
 
+    // Fonction de construction de l'interface
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-
-
+            Container(
+              height: 85,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/images/img.png"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
             // Logo + titre
             Container(
               width: double.infinity,
@@ -264,10 +319,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
+                  Image.asset(
+                    'assets/images/Logo.png',
+                    height: 40,
+                  ),
                   const SizedBox(width: 10),
                   const Text(
-                    "Mes boissons",
+                    "My Moroccan Shop",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -295,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
 
-            // 4⃣ Zone filtres + grille
+            //  Liste des boissons
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -326,48 +384,72 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
 
 
+            //  Bouton pour ajouter une boisson
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () async {
-                  final updatedList = await Navigator.push<List<Boisson>>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ajoutBoisson(
-                        boisson: boissons[0],
-                        boissonss: boissons,
-                      ),
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 24 , horizontal: 20),
                     ),
-                  );
+                    onPressed: () async {
+                      final situation = await showPinDialog(context);
+                      if (!situation) return;
 
-                  await loadFromStorage();
+                      final updatedList = await Navigator.push<List<Boisson>>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ajoutBoisson(
+                            boisson: boissons[0],
+                            boissonss: boissons,
+                          ),
+                        ),
+                      );
 
-                  if (updatedList != null) {
-                    setState(() {
-                      boissons = updatedList;
-                      applyFilters();
-                    });
-                    saveBoissons(boissons);
-                  } else {
-                    setState(() {
-                      applyFilters();
-                    });
-                  }
-                },
-                child: const Text("Ajouter une boisson"),
+                      await loadFromStorage();
+
+                      if (updatedList != null) {
+                        setState(() {
+                          boissons = updatedList;
+                          applyFilters();
+                        });
+                        saveBoissons(boissons);
+                      } else {
+                        setState(() {
+                          applyFilters();
+                        });
+                      }
+                    },
+                    child: const Text("Ajouter une boisson"),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 24 , horizontal: 20)
+                    ),
+                    onPressed: () {
+                      sendEmailListe(boissons); // fonction pour envoyer toute la liste
+                    },
+                    child: const Text("Envoyer la liste par mail"),
+                  ),
+
+                ],
               ),
-            ),
+            )
+
           ],
         ),
       ),
     );
   }
+
+  // Fonction pour afficher la liste des boissons
   Widget _grid() {
     return GridView.builder(
       itemCount: filteredBoissons.length,
@@ -408,13 +490,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   children: [
                     Container(
                       width: 130,
-                      height: 80,
+                      height: 180,
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.75),
+                        color: Colors.green.withOpacity(0.75),
                         borderRadius: BorderRadius.circular(40),
                       ),
                     ),
-                    Image.asset(b.imagePath, height: 120, fit: BoxFit.contain),
+                    Image.asset(b.imagePath, height: 1200, fit: BoxFit.contain),
                   ],
                 ),
               ),
@@ -422,8 +504,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Text(
                 b.name,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-                maxLines: 2,
+                style: const TextStyle(fontWeight: FontWeight.bold , fontSize: 24,),
+                maxLines: 10,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -433,9 +515,95 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+}
+
+
+
+Future<bool> showPinDialog(BuildContext context) async{
+  const pin = '691387';
+  final controller = TextEditingController();
+  bool isCorrect = false;
+
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Code de sécurité"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Entrez le code à 6 chiffres"),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              obscureText: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: "******",
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text == pin) {
+                isCorrect = true;
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("❌ Code incorrect")),
+                );
+              }
+            },
+            child: const Text("Valider"),
+          ),
+        ],
+      );
+    },
+  );
+
+  return isCorrect;
 
 }
 
+void sendEmailListe(List<Boisson> boissons) async {
+  if (boissons.isEmpty) return;
+
+  // Construire le mailto
+  final body = boissons.map((boisson) =>
+  'Nom : ${boisson.name}\n'
+      'Pays : ${boisson.country}\n'
+      'Catégorie : ${boisson.category}\n'
+      'Date : ${boisson.date}\n'
+      'Note : ⭐ ${boisson.rating}\n'
+      'Commentaire : ${boisson.comments}\n'
+      '--------------------------\n'
+  ).join('\n');
+
+  final subject = Uri.encodeComponent('Liste des boissons');
+  final bodyEncoder = Uri.encodeComponent(body);
+
+  final mailt = 'mailto:?subject=$subject&body=$bodyEncoder';
+
+  // Ouvrir l'application mail
+  if (await canLaunchUrlString(mailt)) {
+    // Envoyer l'email
+    await launchUrlString(mailt);
+  } else {
+    print('Impossible d’ouvrir l’application mail');
+  }
+
+}
+
+// Classe ajoutBoisson et liste de boissons
 class ajoutBoisson extends StatefulWidget {
   final Boisson boisson;
   final List<Boisson> boissonss;
@@ -447,7 +615,11 @@ class ajoutBoisson extends StatefulWidget {
   State<ajoutBoisson> createState() => _ajoutBoisson();
 }
 
+// Classe _ajoutBoisson et liste de boissons
 class _ajoutBoisson extends State<ajoutBoisson> {
+
+
+  // Champs du formulaire
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _countryController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
@@ -456,6 +628,7 @@ class _ajoutBoisson extends State<ajoutBoisson> {
   final TextEditingController _commentsController = TextEditingController();
   final TextEditingController _imagePathController = TextEditingController();
 
+  // Liste des images
   final List<String> imageOptions = [
     'assets/images/AïnSaïss.png',
     'assets/images/Bahia.png',
@@ -495,6 +668,7 @@ class _ajoutBoisson extends State<ajoutBoisson> {
 
 
   @override
+  // Fonction de destruction
   void dispose() {
     _nameController.dispose();
     _countryController.dispose();
@@ -505,6 +679,8 @@ class _ajoutBoisson extends State<ajoutBoisson> {
     _imagePathController.dispose();
     super.dispose();
   }
+
+  // Fonction pour sauvegarder la boisson
   void saveForm() {
     final name = _nameController.text.trim();
     final country = _countryController.text.trim();
@@ -513,7 +689,6 @@ class _ajoutBoisson extends State<ajoutBoisson> {
     final rating = _ratingController.text.trim();
     final comments = _commentsController.text.trim();
     final imagePath = _imagePathController.text.trim();
-
     if (name.isEmpty ||
         country.isEmpty ||
         category.isEmpty ||
@@ -522,7 +697,6 @@ class _ajoutBoisson extends State<ajoutBoisson> {
         comments.isEmpty) {
       return;
     }
-
     final newBoisson = Boisson(
       name: name,
       country: country,
@@ -532,12 +706,10 @@ class _ajoutBoisson extends State<ajoutBoisson> {
       comments: comments,
       imagePath: imagePath,
     );
-
     widget.boissonss.add(newBoisson);
-
-
   }
 
+  // Fonction de construction de l'interface
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Ajouter une boisson')),
@@ -722,6 +894,7 @@ class _ajoutBoisson extends State<ajoutBoisson> {
 }
 
 
+// Classe ContactDetailScreen et liste de boissons
 class ContactDetailScreen extends StatefulWidget {
   final Boisson boisson;
   final List<Boisson> boissonss;
@@ -733,6 +906,7 @@ class ContactDetailScreen extends StatefulWidget {
   State<ContactDetailScreen> createState() => _ContactDetailScreenState();
 }
 
+// Classe _ContactDetailScreenState et liste de boissons
 class _ContactDetailScreenState extends State<ContactDetailScreen> {
   @override
   Widget build(BuildContext context) {
@@ -752,7 +926,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start, // alignement à gauche
                     mainAxisSize: MainAxisSize.min, // empêche de prendre toute la hauteur
                     children: [
                       Text('Nom : ${boisson.name}', style: const TextStyle(fontSize: 18)),
@@ -769,6 +943,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
+            // Boutons d'action
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -782,6 +957,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
+                    final situation = await showPinDialog(context);
+                    if (!situation) return;
                     final updatedList = await Navigator.push<List<Boisson>>(
                       context,
                       MaterialPageRoute(
@@ -792,10 +969,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       ),
                     );
 
+
                     if (updatedList != null) {
-                      // 🔹 Mise à jour de HomeScreen
+                      //  Mise à jour de HomeScreen
                       final homeState = context.findAncestorStateOfType<_HomeScreenState>();
                       homeState?.saveBoissons(updatedList);
+                      await homeState?.loadFromStorage();
 
                       Navigator.pop(context, updatedList);
                     }
@@ -806,36 +985,35 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
                 ElevatedButton(
                   onPressed: () async {
-                    // 1️⃣ Supprimer la boisson de la liste locale
+                    final situation = await showPinDialog(context);
+                    if (!situation) return;
+                    //  Supprimer la boisson de la liste locale
                     setState(() {
                       widget.boissonss.remove(widget.boisson);
                     });
 
-                    // 2️⃣ Sauvegarder les modifications dans SharedPreferences
+                    //  Sauvegarder les modifications dans SharedPreferences
                     final homeState = context.findAncestorStateOfType<_HomeScreenState>();
                     if (homeState != null) {
                       await homeState.saveBoissons(widget.boissonss);
+                      await homeState?.loadFromStorage();
                     }
 
-                    // 3️⃣ Recharger les données depuis SharedPreferences pour être sûr
+                    // Recharger les données depuis SharedPreferences pour être sûr
                     if (homeState != null) {
                       await homeState.loadFromStorage();
                     }
 
-                    // 4️⃣ Réappliquer les filtres pour mettre à jour l'affichage
+                    // Réappliquer les filtres pour mettre à jour l'affichage
                     if (homeState != null) {
                       homeState.applyFilters();
                     }
 
-                    // 5️⃣ Retourner à l'écran précédent avec la liste mise à jour
+                    // Retourner à l'écran précédent avec la liste mise à jour
                     Navigator.pop(context, widget.boissonss);
                   },
                   child: const Text('Supprimer'),
                 ),
-
-
-
-
               ],
             ),
           ],
@@ -847,7 +1025,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 }
 
+// Fonction pour envoyer un email
 void sendEmail(Boisson boisson) async {
+  // Construire le mailto
   final subject = Uri.encodeComponent('Infos sur la boisson ${boisson.name}');
   final body = Uri.encodeComponent(
       'Nom : ${boisson.name}\n'
@@ -860,7 +1040,9 @@ void sendEmail(Boisson boisson) async {
 
   final mailt = 'mailto:?subject=$subject&body=$body';
 
+  // Ouvrir l'application mail
   if (await canLaunchUrlString(mailt)) {
+    // Envoyer l'email
     await launchUrlString(mailt);
   } else {
     print('Impossible d’ouvrir l’application mail');
@@ -868,6 +1050,7 @@ void sendEmail(Boisson boisson) async {
 
 }
 
+// Fonction pour rechercher sur Internet
 void searchInInternet(Boisson boisson) async {
   final nom = boisson.name ;
   final info = Uri.encodeComponent(nom);
@@ -881,6 +1064,7 @@ void searchInInternet(Boisson boisson) async {
 
 }
 
+// Classe ModificationBoisson et liste de boissons
 class ModificationBoisson extends StatefulWidget {
   final Boisson boisson;
   final List<Boisson> boissonss;
@@ -896,6 +1080,8 @@ class ModificationBoisson extends StatefulWidget {
 }
 
 class _ModificationBoissonState extends State<ModificationBoisson> {
+
+
   late final TextEditingController _nameController;
   late final TextEditingController _countryController;
   late final TextEditingController _categoryController;
@@ -1020,7 +1206,7 @@ class _ModificationBoissonState extends State<ModificationBoisson> {
               const SizedBox(height: 10),
 
               // Champ Catégorie
-              // Champ Catégorie
+
               DropdownButtonFormField<String>(
                 value: _categoryController.text.isNotEmpty ? _categoryController.text : null,
                 decoration: const InputDecoration(
@@ -1043,7 +1229,7 @@ class _ModificationBoissonState extends State<ModificationBoisson> {
               const SizedBox(height: 10),
 
 
-              // Champ Date
+
               // Champ Date
               TextField(
                 controller: _dateController,
@@ -1073,6 +1259,7 @@ class _ModificationBoissonState extends State<ModificationBoisson> {
                 },
               ),
               const SizedBox(height: 10),
+
 
 
               // Champ Note
